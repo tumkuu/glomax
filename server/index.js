@@ -229,6 +229,10 @@ app.post("/api/order-email", async (req, res) => {
     if (err.code === "SMTP_CONFIG") {
       message =
         "Имэйл тохиргоо дутуу. Render дээр SMTP_USER / SMTP_PASS шалгана уу.";
+    } else if (err.code === "RESEND_ERROR") {
+      message =
+        "Resend имэйл алдаа: " +
+        (err.message || "API key эсвэл ORDER_EMAIL_TO-г шалгана уу.");
     } else if (
       /Invalid login|Username and Password not accepted|EAUTH|535/i.test(
         String(err.message || "") + String(err.response || "")

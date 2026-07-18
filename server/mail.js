@@ -138,10 +138,15 @@ async function createTransporter() {
   });
 }
 
-/** HTTPS email — works on Render when SMTP ports/IPv6 are broken. Free: https://resend.com */
-async function sendViaResend({ from, to, subject, text }) {
+/** HTTPS email — works on Render when SMTP/IPv6 are broken. Free: https://resend.com */
+async function sendViaResend({ to, subject, text }) {
   const apiKey = (process.env.RESEND_API_KEY || "").trim();
   if (!apiKey) return null;
+
+  // Free Resend: must use onboarding@resend.dev until you verify your own domain
+  const from =
+    (process.env.RESEND_FROM || "").trim() ||
+    "GloMax Orders <onboarding@resend.dev>";
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -150,7 +155,7 @@ async function sendViaResend({ from, to, subject, text }) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      from: from.includes("@") ? from : `GloMax <onboarding@resend.dev>`,
+      from,
       to: [to],
       subject,
       text
@@ -159,14 +164,15 @@ async function sendViaResend({ from, to, subject, text }) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(
-      data.message || data.error || `Resend failed (${res.status})`
-    );
+    const msg =
+      (data && (data.message || (data.error && data.error.message))) ||
+      `Resend failed (${res.status})`;
+    const err = new Error(msg);
     err.code = "RESEND_ERROR";
     throw err;
   }
 
-  console.log(`[mail] Sent via Resend → ${to}`);
+  console.log(`[mail] Sent via Resend → ${to} (id: ${data.id || "?"})`);
   return data;
 }
 
@@ -223,10 +229,17 @@ async function sendOrderEmail(orderPayload) {
     process.env.SMTP_FROM || `GloMax Orders <${getOrderEmailFrom()}>`;
   const from = String(fromRaw).trim().replace(/^["']|["']$/g, "");
 
-  // Prefer Resend HTTPS if configured (avoids SMTP/IPv6 on Render)
-  if (process.env.RESEND_API_KEY) {
-    await sendViaResend({ from, to, subject, text });
-    return { to, from, subject, totals, orderedAt, via: "resend" };
+  // Prefer Resend HTTPS (required on Render — SMTP IPv6 is broken there)
+  if ((process.env.RESEND_API_KEY || "").trim()) {
+    await sendViaResend({ to, subject, text });
+    return {
+      to,
+      from: process.env.RESEND_FROM || "GloMax Orders <onboarding@resend.dev>",
+      subject,
+      totals,
+      orderedAt,
+      via: "resend"
+    };
   }
 
   try {
