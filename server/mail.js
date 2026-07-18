@@ -1,9 +1,15 @@
 const nodemailer = require("nodemailer");
 
-const ORDER_EMAIL_FROM =
-  process.env.SMTP_USER || "tumkuu1223@gmail.com";
-const ORDER_EMAIL_TO =
-  process.env.ORDER_EMAIL_TO || "kh.tuguldur99@gmail.com";
+function getOrderEmailFrom() {
+  return (process.env.SMTP_USER || "tumkuu1223@gmail.com").trim();
+}
+
+function getOrderEmailTo() {
+  return (
+    process.env.ORDER_EMAIL_TO ||
+    "glomex654@gmail.com"
+  ).trim();
+}
 
 function formatMoney(amount) {
   return new Intl.NumberFormat("mn-MN").format(Number(amount) || 0) + " MNT";
@@ -96,7 +102,7 @@ function buildOrderEmail({ customer, products, orderedAt }) {
 }
 
 function createTransporter() {
-  const user = (process.env.SMTP_USER || ORDER_EMAIL_FROM).trim();
+  const user = getOrderEmailFrom();
   const pass = String(process.env.SMTP_PASS || "").replace(/\s+/g, "");
   const host = (process.env.SMTP_HOST || "smtp.gmail.com").trim();
   const port = Number(process.env.SMTP_PORT || 587);
@@ -173,33 +179,35 @@ async function sendOrderEmail(orderPayload) {
     orderedAt
   });
 
-  const from =
+  const to = getOrderEmailTo();
+  const fromRaw =
     process.env.SMTP_FROM ||
-    `"GloMax Orders" <${process.env.SMTP_USER || ORDER_EMAIL_FROM}>`;
+    `"GloMax Orders" <${getOrderEmailFrom()}>`;
+  // Render env UI sometimes stores quotes literally — strip outer quotes
+  const from = String(fromRaw).trim().replace(/^["']|["']$/g, "");
 
   await transporter.sendMail({
     from,
-    to: ORDER_EMAIL_TO,
+    to,
     subject,
     text
   });
 
-  return { to: ORDER_EMAIL_TO, from, subject, totals, orderedAt };
+  console.log(`[mail] Sent order email → ${to}`);
+  return { to, from, subject, totals, orderedAt };
 }
 
 function assertSmtpReady() {
   const user = (process.env.SMTP_USER || "").trim();
   const pass = String(process.env.SMTP_PASS || "").replace(/\s+/g, "");
+  const to = getOrderEmailTo();
   if (!user || !pass) {
     console.warn(
-      "[mail] SMTP not configured. Set SMTP_USER and SMTP_PASS in .env " +
-        "(Gmail App Password for tumkuu1223@gmail.com)."
+      "[mail] SMTP not configured. Set SMTP_USER and SMTP_PASS in Environment Variables."
     );
     return false;
   }
-  console.log(
-    `[mail] Order emails: ${user} → ${ORDER_EMAIL_TO}`
-  );
+  console.log(`[mail] Order emails: ${user} → ${to}`);
   return true;
 }
 
@@ -207,6 +215,6 @@ module.exports = {
   sendOrderEmail,
   buildOrderEmail,
   assertSmtpReady,
-  ORDER_EMAIL_TO,
-  ORDER_EMAIL_FROM
+  getOrderEmailTo,
+  getOrderEmailFrom
 };
