@@ -16,14 +16,14 @@ function formatMoney(amount) {
 }
 
 function formatDateTime(date = new Date()) {
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("mn-MN", {
     dateStyle: "full",
     timeStyle: "medium",
     timeZone: "Asia/Ulaanbaatar"
   }).format(date);
 }
 
-function buildOrderEmail({ customer, products, orderedAt }) {
+function buildOrderEmail({ customer, products, orderedAt, orderId }) {
   const lines = [];
   const list = Array.isArray(products) ? products : [];
   const differentProducts = list.length;
@@ -39,63 +39,46 @@ function buildOrderEmail({ customer, products, orderedAt }) {
     0
   );
 
-  lines.push("Customer Information:");
+  const name = customer.customerName || customer.fullName || "";
+  const phone = customer.phone || "";
+  const address = customer.address || "";
+  const notes = customer.notes || "";
+
+  lines.push("ШИНЭ ЗАХИАЛГА — GloMax");
+  lines.push("========================");
+  if (orderId) {
+    lines.push(`Захиалгын дугаар: ${orderId}`);
+  }
+  lines.push(`Огноо: ${formatDateTime(orderedAt)}`);
   lines.push("");
-  lines.push("Name:");
-  lines.push(customer.customerName || customer.fullName || "");
+  lines.push("—— Захиалагчийн мэдээлэл ——");
+  lines.push(`Нэр: ${name}`);
+  lines.push(`Утас: ${phone}`);
+  lines.push(`Хаяг: ${address}`);
+  lines.push(`Тэмдэглэл: ${notes || "байхгүй"}`);
   lines.push("");
-  lines.push("Phone:");
-  lines.push(customer.phone || "");
-  lines.push("");
-  lines.push("Address:");
-  lines.push(customer.address || "");
-  lines.push("");
-  lines.push("Notes:");
-  lines.push(customer.notes || "(none)");
-  lines.push("");
-  lines.push("---");
-  lines.push("");
-  lines.push("Ordered Products:");
-  lines.push("");
+  lines.push("—— Захиалсан бараа ——");
 
   list.forEach((item, index) => {
     const qty = Number(item.quantity) || 0;
     const price = Number(item.price) || 0;
     const total = Number(item.total) || price * qty;
-    lines.push(`Product ${index + 1}:`);
-    lines.push("Name:");
-    lines.push(item.name || "");
-    lines.push("Quantity:");
-    lines.push(String(qty));
-    lines.push("Price:");
-    lines.push(formatMoney(price));
-    lines.push("Total:");
-    lines.push(formatMoney(total));
-    lines.push("");
+    lines.push(`${index + 1}. ${item.name || "Бараа"}`);
+    lines.push(`   Тоо: ${qty}`);
+    lines.push(`   Үнэ: ${formatMoney(price)}`);
+    lines.push(`   Дүн: ${formatMoney(total)}`);
   });
 
-  lines.push("---");
   lines.push("");
-  lines.push("Order Summary:");
+  lines.push("—— Нийт ——");
+  lines.push(`Барааны төрөл: ${differentProducts}`);
+  lines.push(`Нийт тоо ширхэг: ${totalQuantity}`);
+  lines.push(`Нийт төлбөр: ${formatMoney(grandTotal)}`);
   lines.push("");
-  lines.push("Total different products:");
-  lines.push(String(differentProducts));
-  lines.push("");
-  lines.push("Total quantity:");
-  lines.push(String(totalQuantity));
-  lines.push("");
-  lines.push("Grand Total:");
-  lines.push(formatMoney(grandTotal));
-  lines.push("");
-  lines.push("Order date:");
-  lines.push(formatDateTime(orderedAt));
-  lines.push("");
-  lines.push("---");
-  lines.push("");
-  lines.push("Please contact the customer as soon as possible.");
+  lines.push("Харилцагчтай утсаар холбогдож баталгаажуулна уу.");
 
   return {
-    subject: "New Order Received - Online Shop",
+    subject: `Шинэ захиалга: ${name || "GloMax"} — ${formatMoney(grandTotal)}`,
     text: lines.join("\n"),
     totals: { differentProducts, totalQuantity, grandTotal }
   };
@@ -176,7 +159,8 @@ async function sendOrderEmail(orderPayload) {
   const { subject, text, totals } = buildOrderEmail({
     customer,
     products,
-    orderedAt
+    orderedAt,
+    orderId: orderPayload.orderId || null
   });
 
   const to = getOrderEmailTo();

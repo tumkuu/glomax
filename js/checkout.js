@@ -205,11 +205,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (submitting || submitted) return;
     if (!validate()) return;
 
-    if (!window.FirebaseOrders) {
-      showToast("Firebase холболт алга. Хуудсыг дахин ачаална уу.");
-      return;
-    }
-
     const cartItems = Cart.get();
     if (!cartItems.length) {
       showToast("Сагс хоосон байна");
@@ -229,28 +224,28 @@ document.addEventListener("DOMContentLoaded", () => {
     let savedOrderId = null;
 
     try {
-      // Firestore save is best-effort if rules are not published yet
-      try {
-        const saved = await FirebaseOrders.saveOrderToFirestore(orderDoc);
-        savedOrderId = saved.id;
-      } catch (fbErr) {
-        console.warn("Firestore save failed:", fbErr);
-        if (fbErr && fbErr.code === "permission-denied") {
-          console.warn(
-            "Publish firestore.rules in Firebase Console → Firestore → Rules"
-          );
-        }
-        // Continue to email — do not block checkout on Firestore rules
+      // Email first (required). Firestore save in background — don't block UX.
+      const emailPromise = sendOrderEmailNotification(orderDoc, null);
+
+      if (window.FirebaseOrders) {
+        FirebaseOrders.saveOrderToFirestore(orderDoc)
+          .then((saved) => {
+            savedOrderId = saved.id;
+          })
+          .catch((fbErr) => {
+            console.warn("Firestore save failed:", fbErr);
+          });
       }
 
-      await sendOrderEmailNotification(orderDoc, savedOrderId);
+      const emailResult = await emailPromise;
+      console.log("Order email sent to:", emailResult.emailTo);
       showSuccess();
     } catch (err) {
-      if (savedOrderId) {
+      if (savedOrderId && window.FirebaseOrders) {
         try {
           await FirebaseOrders.deleteOrderFromFirestore(savedOrderId);
         } catch {
-          /* rollback best-effort; keep cart */
+          /* rollback best-effort */
         }
       }
       showToast(err.message || firebaseErrorMessage(err));

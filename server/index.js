@@ -143,6 +143,10 @@ function handleError(res, err) {
 }
 
 /* ——— Public API ——— */
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true, ts: Date.now() });
+});
+
 app.get("/api/products", async (_req, res) => {
   try {
     res.json(await getAllProducts());
@@ -551,7 +555,20 @@ app.use((err, _req, res, _next) => {
 
 async function ensureReady() {
   await initDb();
-  await seed();
+  try {
+    assertSmtpReady();
+  } catch (mailErr) {
+    console.warn("[mail]", mailErr.message || mailErr);
+  }
+}
+
+/** Seed / promotions after listen so cold start is faster on Render free. */
+async function warmInBackground() {
+  try {
+    await seed();
+  } catch (err) {
+    console.warn("[seed]", err.message || err);
+  }
   try {
     await ensurePromotionsSeeded();
   } catch (promoErr) {
@@ -559,11 +576,6 @@ async function ensureReady() {
       "Promotions seed skipped (check Firestore rules):",
       promoErr.message || promoErr
     );
-  }
-  try {
-    assertSmtpReady();
-  } catch (mailErr) {
-    console.warn("[mail]", mailErr.message || mailErr);
   }
 }
 
@@ -575,6 +587,7 @@ async function start() {
       console.log(`Admin panel: http://localhost:${PORT}/admin`);
       console.log(`Database: Firebase RTDB (products) + Firestore (promotions, orders)`);
       console.log(`Login: admin / admin123`);
+      warmInBackground();
     });
   } catch (err) {
     console.error("Failed to start server:", err.message);
