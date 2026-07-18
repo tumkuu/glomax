@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="mn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#ff8c00" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>GloMax — Чанартай онлайн дэлгүүр</title>
+    <meta
+      name="description"
+      content="GloMax — Монголын орчин үеийн онлайн дэлгүүр. Электроник, хувцас, гэр ахуй, спорт бараа."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Rubik:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav">
+        <a href="index.html" class="logo" aria-label="GloMax нүүр">
+          <span class="logo__mark">G</span>
+          <span>GloMax</span>
+        </a>
+
+        <form class="nav-search" data-global-search>
+          <input type="search" placeholder="Бараа хайх..." aria-label="Хайлт" />
+          <button type="submit" aria-label="Хайх">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3-3" />
+            </svg>
+          </button>
+        </form>
+
+        <button class="nav-toggle" aria-label="Цэс" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="nav-menu" aria-label="Үндсэн цэс">
+          <a href="index.html">Нүүр</a>
+          <a href="products.html">Бараа</a>
+          <a href="cart.html" class="nav-cart">
+            Сагс
+            <span class="cart-badge" data-cart-count hidden>0</span>
+          </a>
+          <a href="contact.html">Холбоо барих</a>
+          <a href="admin/" class="nav-admin">Админ</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero__bg" aria-hidden="true"></div>
+        <div class="container hero__content">
+          <p class="hero__brand">GloMax</p>
+          <h1 class="hero__title">Чанартай бараа — хурдан хүргэлт</h1>
+          <p class="hero__text">
+            Электроник, хувцас, гэр ахуй, спорт — бүгдийг нэг дороос.
+            Өнөөдөр захиалж, маргааш хүлээн авна.
+          </p>
+          <div class="hero__actions">
+            <a href="products.html" class="btn btn--primary">Одоо худалдаж авах</a>
+            <a href="#promo" class="btn btn--ghost">Хямдрал үзэх</a>
+          </div>
+        </div>
+      </section>
+
+      <div class="container">
+        <div class="features reveal">
+          <div class="feature">
+            <div class="feature__icon">🚚</div>
+            <h3>Хурдан хүргэлт</h3>
+            <p>УБ хотод 24–48 цагт</p>
+          </div>
+          <div class="feature">
+            <div class="feature__icon">🛡️</div>
+            <h3>Баталгаатай</h3>
+            <p>Жинхэнэ бараа, баталгаатай</p>
+          </div>
+          <div class="feature">
+            <div class="feature__icon">↩️</div>
+            <h3>Буцаах боломж</h3>
+            <p>7 хоногийн дотор</p>
+          </div>
+          <div class="feature">
+            <div class="feature__icon">💳</div>
+            <h3>Аюулгүй төлбөр</h3>
+            <p>Бэлэн / данс / карт</p>
+          </div>
+        </div>
+      </div>
+
+      <section class="promo" id="promo" hidden>
+        <div class="container">
+          <div class="section-head reveal">
+            <div>
+              <p class="section-eyebrow" id="promo-eyebrow"></p>
+              <h2 class="section-title" id="promo-title"></h2>
+              <p class="section-lead" id="promo-lead"></p>
+            </div>
+          </div>
+
+          <div class="promo-grid" id="promo-grid"></div>
+        </div>
+      </section>
+
+      <section class="section section--muted" id="products">
+        <div class="container">
+          <div class="section-head reveal">
+            <div>
+              <p class="section-eyebrow">Дэлгүүр</p>
+              <h2 class="section-title">Бараанууд</h2>
+              <p class="section-lead">Бүх бүтээгдэхүүн — шууд мэдээллийн сангаас.</p>
+            </div>
+            <a href="products.html" class="link-more">Бүх бараа →</a>
+          </div>
+          <div class="product-grid" id="home-products"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a href="index.html" class="logo">
+              <span class="logo__mark">G</span>
+              <span>GloMax</span>
+            </a>
+            <p>Чанартай бараа, найдвартай үйлчилгээ — таны онлайн дэлгүүр.</p>
+          </div>
+          <div class="footer-col">
+            <h4>Цэс</h4>
+            <a href="index.html">Нүүр</a>
+            <a href="products.html">Бараа</a>
+            <a href="cart.html">Сагс</a>
+            <a href="checkout.html">Захиалга</a>
+          </div>
+          <div class="footer-col">
+            <h4>Холбоо барих</h4>
+            <p>99857894</p>
+            <p>glomex654@gmail.com</p>
+          </div>
+          <div class="footer-col">
+            <h4>Сошиал</h4>
+            <div class="footer-social">
+              <a href="https://www.facebook.com/profile.php?id=61584158092009&utm_source=ig&utm_medium=social&utm_content=link_in_bio" target="_blank" rel="noopener" aria-label="Facebook">f</a>
+              <a href="https://www.instagram.com/glomax.1?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener" aria-label="Instagram">ig</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>© 2026 GloMax. Бүх эрх хуулиар хамгаалагдсан.</p>
+          <p>Монгол хэл · Ulaanbaatar</p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="js/products-data.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/home.js"></script>
+  
+    <nav class="mobile-bottom-nav" aria-label="Утасны цэс">
+      <div class="mobile-bottom-nav__inner">
+        <a href="/index.html" aria-label="Нүүр">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V9.5z"/></svg>
+          <span>Нүүр</span>
+        </a>
+        <a href="/products.html" aria-label="Бараа">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Бараа</span>
+        </a>
+        <a href="/cart.html" class="nav-cart" aria-label="Сагс">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="20" r="1"/><circle cx="17" cy="20" r="1"/><path d="M2 3h2l2.4 12.4a1 1 0 001 .8h9.2a1 1 0 00.98-.8L20 7H6"/></svg>
+          <span>Сагс</span>
+          <span class="cart-badge" data-cart-count hidden>0</span>
+        </a>
+        <a href="/contact.html" aria-label="Холбоо барих">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z"/></svg>
+          <span>Холбоо</span>
+        </a>
+      </div>
+    </nav>
+
+  </body>
+</html>

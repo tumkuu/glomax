@@ -1,0 +1,33 @@
+{
+  "name": "glomax",
+  "version": "1.0.0",
+  "description": "GloMax e-commerce with admin panel and Firebase Realtime Database",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "seed": "node server/seed.js",
+    "prepare:functions": "node scripts/prepare-functions.js",
+    "firebase": "firebase",
+    "login": "firebase login",
+    "deploy": "npm run prepare:functions && npm --prefix functions install && firebase deploy --project glomax-657d7 --only hosting,functions,firestore:rules",
+    "deploy:all": "npm run prepare:functions && npm --prefix functions install && firebase deploy --project glomax-657d7 --only hosting,functions,firestore:rules,storage"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.4.2",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "firebase": "^12.16.0",
+    "firebase-admin": "^14.2.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^9.0.3"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.35.1"
+  }
+}

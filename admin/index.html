@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="mn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#ff8c00" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Админ самбар — GloMax</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Rubik:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/admin/css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <span class="brand-mark">G</span>
+          <span>GloMax</span>
+        </div>
+        <ul class="nav-list">
+          <li>
+            <button type="button" class="is-active" data-panel="overview">Хянах самбар</button>
+          </li>
+          <li>
+            <button type="button" data-panel="products">Барааны удирдлага</button>
+          </li>
+          <li>
+            <button type="button" data-panel="add">Бараа нэмэх</button>
+          </li>
+          <li>
+            <button type="button" data-panel="promotions">Promotion Management</button>
+          </li>
+          <li>
+            <a href="/" target="_blank">Дэлгүүр үзэх ↗</a>
+          </li>
+          <li>
+            <button type="button" id="logout-btn">Гарах</button>
+          </li>
+        </ul>
+        <p class="sidebar-foot">Админ · GloMax</p>
+      </aside>
+
+      <div class="main">
+        <div class="topbar">
+          <div>
+            <button type="button" class="mobile-toggle" id="menu-toggle" aria-label="Цэс">☰</button>
+            <h1 id="page-title">Хянах самбар</h1>
+            <p id="page-sub">Тавтай морил, <span id="admin-name">admin</span></p>
+          </div>
+          <button type="button" class="btn btn--outline btn--sm" data-panel-jump="add">
+            + Бараа нэмэх
+          </button>
+        </div>
+
+        <div class="alert alert--success" id="flash"></div>
+        <div class="alert alert--error" id="flash-error"></div>
+
+        <!-- Overview -->
+        <section class="panel is-active" id="panel-overview">
+          <div class="stats" id="stats-grid">
+            <div class="stat-card"><span>Нийт бараа</span><strong id="stat-total">0</strong></div>
+            <div class="stat-card"><span>Нийт нөөц</span><strong id="stat-stock">0</strong></div>
+            <div class="stat-card"><span>Бага нөөц</span><strong id="stat-low">0</strong></div>
+            <div class="stat-card"><span>Дууссан</span><strong id="stat-out">0</strong></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h2>Сүүлийн бараанууд</h2>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Бараа</th>
+                    <th>Ангилал</th>
+                    <th>Үнэ</th>
+                    <th>Нөөц</th>
+                  </tr>
+                </thead>
+                <tbody id="overview-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Products -->
+        <section class="panel" id="panel-products">
+          <div class="card">
+            <div class="card-head">
+              <h2>Бүх бараа</h2>
+              <input
+                type="search"
+                id="admin-search"
+                placeholder="Хайх..."
+                style="padding: 0.55rem 0.9rem; border-radius: 999px; border: 1px solid var(--border); min-width: 200px"
+              />
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Бараа</th>
+                    <th>Ангилал</th>
+                    <th>Үнэ</th>
+                    <th>Нөөц</th>
+                    <th>Огноо</th>
+                    <th>Үйлдэл</th>
+                  </tr>
+                </thead>
+                <tbody id="products-table"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="products-empty" hidden>Бараа байхгүй байна.</div>
+          </div>
+        </section>
+
+        <!-- Add -->
+        <section class="panel" id="panel-add">
+          <div class="card">
+            <div class="card-head">
+              <h2>Шинэ бараа нэмэх</h2>
+            </div>
+            <form id="add-form">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="add-name">Барааны нэр *</label>
+                  <input id="add-name" name="name" required />
+                </div>
+                <div class="form-group">
+                  <label for="add-price">Үнэ (₮) *</label>
+                  <input id="add-price" name="price" type="number" min="0" step="1" required />
+                </div>
+                <div class="form-group">
+                  <label for="add-category">Ангилал</label>
+                  <input id="add-category" name="category" list="category-list" placeholder="жишээ: электроник" />
+                </div>
+                <div class="form-group">
+                  <label for="add-stock">Нөөц (ширхэг)</label>
+                  <input id="add-stock" name="stock" type="number" min="0" step="1" value="0" />
+                </div>
+                <div class="form-group full">
+                  <label for="add-description">Тайлбар</label>
+                  <textarea id="add-description" name="description" rows="4"></textarea>
+                </div>
+                <div class="form-group full">
+                  <label>Зураг * (үндсэн + галерей)</label>
+                  <label class="dropzone" id="add-dropzone">
+                    Зураг сонгох эсвэл чирж оруулах
+                    <input type="file" id="add-images" name="images" accept="image/*" multiple />
+                  </label>
+                  <div class="image-preview" id="add-preview"></div>
+                </div>
+              </div>
+              <button type="submit" class="btn btn--primary" style="margin-top: 1rem">
+                Хадгалах
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Promotions -->
+        <section class="panel" id="panel-promotions">
+          <div class="card" style="margin-bottom: 1.25rem">
+            <div class="card-head">
+              <h2>Хэсгийн гарчиг</h2>
+            </div>
+            <form id="promo-section-form">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="section-title">Title *</label>
+                  <input id="section-title" name="title" required />
+                </div>
+                <div class="form-group">
+                  <label for="section-subtitle">Subtitle *</label>
+                  <input id="section-subtitle" name="subtitle" required />
+                </div>
+                <div class="form-group full">
+                  <label for="section-description">Description</label>
+                  <textarea id="section-description" name="description" rows="3"></textarea>
+                </div>
+                <div class="form-group full">
+                  <label class="checkbox-row">
+                    <input type="checkbox" id="section-active" name="active" checked />
+                    Active — нүүр хуудсанд харуулах
+                  </label>
+                </div>
+              </div>
+              <button type="submit" class="btn btn--primary" style="margin-top: 1rem">
+                Хэсэг хадгалах
+              </button>
+            </form>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Урамшууллын картууд</h2>
+              <button type="button" class="btn btn--primary btn--sm" id="promo-add-btn">
+                + Шинэ урамшуулал
+              </button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Зураг</th>
+                    <th>Title</th>
+                    <th>Subtitle</th>
+                    <th>Товч</th>
+                    <th>Active</th>
+                    <th>Үйлдэл</th>
+                  </tr>
+                </thead>
+                <tbody id="promotions-table"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="promotions-empty" hidden>Урамшуулал байхгүй байна.</div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <datalist id="category-list"></datalist>
+
+    <!-- Edit modal -->
+    <div class="modal-backdrop" id="edit-modal" role="dialog" aria-modal="true">
+      <div class="modal">
+        <h2>Бараа засах</h2>
+        <form id="edit-form">
+          <input type="hidden" id="edit-id" />
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="edit-name">Барааны нэр *</label>
+              <input id="edit-name" required />
+            </div>
+            <div class="form-group">
+              <label for="edit-price">Үнэ (₮) *</label>
+              <input id="edit-price" type="number" min="0" step="1" required />
+            </div>
+            <div class="form-group">
+              <label for="edit-category">Ангилал</label>
+              <input id="edit-category" list="category-list" />
+            </div>
+            <div class="form-group">
+              <label for="edit-stock">Нөөц</label>
+              <input id="edit-stock" type="number" min="0" step="1" />
+            </div>
+            <div class="form-group full">
+              <label for="edit-description">Тайлбар</label>
+              <textarea id="edit-description" rows="4"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>Одоогийн зураг</label>
+              <div class="image-preview" id="edit-current-images"></div>
+            </div>
+            <div class="form-group full">
+              <label>Шинэ зураг нэмэх</label>
+              <label class="dropzone" id="edit-dropzone">
+                Нэмэлт зураг сонгох
+                <input type="file" id="edit-images" accept="image/*" multiple />
+              </label>
+              <div class="image-preview" id="edit-preview"></div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn--outline" id="edit-cancel">Болих</button>
+            <button type="submit" class="btn btn--primary">Хадгалах</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Promotion edit/add modal -->
+    <div class="modal-backdrop" id="promo-modal" role="dialog" aria-modal="true">
+      <div class="modal">
+        <h2 id="promo-modal-title">Урамшуулал засах</h2>
+        <form id="promo-form">
+          <input type="hidden" id="promo-id" />
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="promo-title">Title *</label>
+              <input id="promo-title" required />
+            </div>
+            <div class="form-group">
+              <label for="promo-subtitle">Subtitle</label>
+              <input id="promo-subtitle" />
+            </div>
+            <div class="form-group full">
+              <label for="promo-description">Description</label>
+              <textarea id="promo-description" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="promo-button-text">Button Text</label>
+              <input id="promo-button-text" placeholder="Үзэх" />
+            </div>
+            <div class="form-group">
+              <label for="promo-button-link">Button Link</label>
+              <input id="promo-button-link" placeholder="products.html" />
+            </div>
+            <div class="form-group full">
+              <label>Promotion Image</label>
+              <div class="image-preview" id="promo-current-image"></div>
+              <label class="dropzone" id="promo-dropzone" style="margin-top: 0.75rem">
+                Зураг сонгох эсвэл солих
+                <input type="file" id="promo-image" accept="image/*" />
+              </label>
+              <div class="image-preview" id="promo-preview"></div>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-row">
+                <input type="checkbox" id="promo-active" checked />
+                Active
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-row">
+                <input type="checkbox" id="promo-wide" />
+                Өргөн карт (wide)
+              </label>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn--outline" id="promo-cancel">Болих</button>
+            <button type="submit" class="btn btn--primary">Хадгалах</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="/admin/js/admin.js"></script>
+  </body>
+</html>

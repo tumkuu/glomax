@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="mn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#ff8c00" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Сагс — GloMax</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Rubik:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav">
+        <a href="index.html" class="logo" aria-label="GloMax нүүр">
+          <span class="logo__mark">G</span>
+          <span>GloMax</span>
+        </a>
+
+        <form class="nav-search" data-global-search>
+          <input type="search" placeholder="Бараа хайх..." aria-label="Хайлт" />
+          <button type="submit" aria-label="Хайх">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3-3" />
+            </svg>
+          </button>
+        </form>
+
+        <button class="nav-toggle" aria-label="Цэс" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="nav-menu" aria-label="Үндсэн цэс">
+          <a href="index.html">Нүүр</a>
+          <a href="products.html">Бараа</a>
+          <a href="cart.html" class="nav-cart">
+            Сагс
+            <span class="cart-badge" data-cart-count hidden>0</span>
+          </a>
+          <a href="contact.html">Холбоо барих</a>
+          <a href="admin/" class="nav-admin">Админ</a>
+        </nav>
+      </div>
+    </header>
+
+    <section class="page-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="index.html">Нүүр</a>
+          <span>/</span>
+          <span>Сагс</span>
+        </nav>
+        <h1>Таны сагс</h1>
+        <p>Тоо ширхэг өөрчлөх, устгах, захиалга үргэлжлүүлэх.</p>
+      </div>
+    </section>
+
+    <main class="section">
+      <div class="container" id="cart-root"></div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a href="index.html" class="logo">
+              <span class="logo__mark">G</span>
+              <span>GloMax</span>
+            </a>
+            <p>Чанартай бараа, найдвартай үйлчилгээ — таны онлайн дэлгүүр.</p>
+          </div>
+          <div class="footer-col">
+            <h4>Цэс</h4>
+            <a href="index.html">Нүүр</a>
+            <a href="products.html">Бараа</a>
+            <a href="cart.html">Сагс</a>
+            <a href="contact.html">Холбоо барих</a>
+          </div>
+          <div class="footer-col">
+            <h4>Холбоо барих</h4>
+            <p>99857894</p>
+            <p>glomex654@gmail.com</p>
+          </div>
+          <div class="footer-col">
+            <h4>Сошиал</h4>
+            <div class="footer-social">
+              <a href="https://www.facebook.com/profile.php?id=61584158092009&utm_source=ig&utm_medium=social&utm_content=link_in_bio" target="_blank" rel="noopener" aria-label="Facebook">f</a>
+              <a href="https://www.instagram.com/glomax.1?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener" aria-label="Instagram">ig</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>© 2026 GloMax. Бүх эрх хуулиар хамгаалагдсан.</p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="js/products-data.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/cart-page.js"></script>
+  
+    <nav class="mobile-bottom-nav" aria-label="Утасны цэс">
+      <div class="mobile-bottom-nav__inner">
+        <a href="/index.html" aria-label="Нүүр">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V9.5z"/></svg>
+          <span>Нүүр</span>
+        </a>
+        <a href="/products.html" aria-label="Бараа">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Бараа</span>
+        </a>
+        <a href="/cart.html" class="nav-cart" aria-label="Сагс">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="20" r="1"/><circle cx="17" cy="20" r="1"/><path d="M2 3h2l2.4 12.4a1 1 0 001 .8h9.2a1 1 0 00.98-.8L20 7H6"/></svg>
+          <span>Сагс</span>
+          <span class="cart-badge" data-cart-count hidden>0</span>
+        </a>
+        <a href="/contact.html" aria-label="Холбоо барих">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4v8z"/></svg>
+          <span>Холбоо</span>
+        </a>
+      </div>
+    </nav>
+
+  </body>
+</html>

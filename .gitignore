@@ -1,0 +1,13 @@
+node_modules/
+data/
+uploads/
+*.db
+*.db-*
+.DS_Store
+.env
+functions/site/
+functions/node_modules/
+hosting-public/.cache/
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
