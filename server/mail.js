@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const dns = require("dns");
 
 function getOrderEmailFrom() {
   return (process.env.SMTP_USER || "tumkuu1223@gmail.com").trim();
@@ -9,6 +10,11 @@ function getOrderEmailTo() {
     process.env.ORDER_EMAIL_TO ||
     "glomex654@gmail.com"
   ).trim();
+}
+
+/** Force IPv4 — Render free often has no IPv6 route (ENETUNREACH). */
+function lookupIpv4(hostname, _options, callback) {
+  dns.lookup(hostname, { family: 4 }, callback);
 }
 
 function formatMoney(amount) {
@@ -91,7 +97,11 @@ function createTransporter() {
     .replace(/^["']|["']$/g, "")
     .replace(/\s+/g, "");
   const host = (process.env.SMTP_HOST || "smtp.gmail.com").trim();
-  const port = Number(process.env.SMTP_PORT || 465);
+  // Gmail on Render: use 465/SSL + IPv4 only (587/IPv6 often ENETUNREACH)
+  let port = Number(process.env.SMTP_PORT || 465);
+  if (host.includes("gmail.com") && port === 587) {
+    port = 465;
+  }
 
   if (!user || !pass) {
     const err = new Error(
@@ -101,16 +111,17 @@ function createTransporter() {
     throw err;
   }
 
-  // Prefer 465/SSL — more reliable from cloud hosts than 587/STARTTLS
   return nodemailer.createTransport({
     host,
     port,
     secure: port === 465,
     auth: { user, pass },
+    family: 4,
+    lookup: lookupIpv4,
     connectionTimeout: 20000,
     greetingTimeout: 20000,
     socketTimeout: 20000,
-    tls: { rejectUnauthorized: true }
+    tls: { rejectUnauthorized: true, servername: host }
   });
 }
 
