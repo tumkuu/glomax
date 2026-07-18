@@ -1,20 +1,26 @@
 const nodemailer = require("nodemailer");
 const dns = require("dns");
 
+// Prefer IPv4 everywhere in this process (Render has broken/no IPv6 egress)
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {
+  /* older Node */
+}
+
 function getOrderEmailFrom() {
   return (process.env.SMTP_USER || "tumkuu1223@gmail.com").trim();
 }
 
 function getOrderEmailTo() {
-  return (
-    process.env.ORDER_EMAIL_TO ||
-    "glomex654@gmail.com"
-  ).trim();
+  return (process.env.ORDER_EMAIL_TO || "glomex654@gmail.com").trim();
 }
 
-/** Force IPv4 — Render free often has no IPv6 route (ENETUNREACH). */
-function lookupIpv4(hostname, _options, callback) {
-  dns.lookup(hostname, { family: 4 }, callback);
+function getSmtpPass() {
+  return String(process.env.SMTP_PASS || "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\s+/g, "");
 }
 
 function formatMoney(amount) {
@@ -90,18 +96,19 @@ function buildOrderEmail({ customer, products, orderedAt, orderId }) {
   };
 }
 
-function createTransporter() {
-  const user = getOrderEmailFrom();
-  const pass = String(process.env.SMTP_PASS || "")
-    .trim()
-    .replace(/^["']|["']$/g, "")
-    .replace(/\s+/g, "");
-  const host = (process.env.SMTP_HOST || "smtp.gmail.com").trim();
-  // Gmail on Render: use 465/SSL + IPv4 only (587/IPv6 often ENETUNREACH)
-  let port = Number(process.env.SMTP_PORT || 465);
-  if (host.includes("gmail.com") && port === 587) {
-    port = 465;
+async function resolveIpv4(hostname) {
+  const { address } = await dns.promises.lookup(hostname, { family: 4 });
+  if (!address || address.includes(":")) {
+    throw new Error(`IPv4 resolve failed for ${hostname}: ${address}`);
   }
+  return address;
+}
+
+async function createTransporter() {
+  const user = getOrderEmailFrom();
+  const pass = getSmtpPass();
+  const hostname = (process.env.SMTP_HOST || "smtp.gmail.com").trim();
+  const port = 465;
 
   if (!user || !pass) {
     const err = new Error(
@@ -111,22 +118,59 @@ function createTransporter() {
     throw err;
   }
 
+  const ipv4 = await resolveIpv4(hostname);
+  console.log(`[mail] SMTP connect ${hostname} → ${ipv4}:${port} (IPv4 only)`);
+
   return nodemailer.createTransport({
-    host,
+    host: ipv4,
     port,
-    secure: port === 465,
+    secure: true,
     auth: { user, pass },
-    family: 4,
-    lookup: lookupIpv4,
+    // Bind to IPv4 so Node does not open an IPv6 local socket
+    localAddress: "0.0.0.0",
     connectionTimeout: 20000,
     greetingTimeout: 20000,
     socketTimeout: 20000,
-    tls: { rejectUnauthorized: true, servername: host }
+    tls: {
+      rejectUnauthorized: true,
+      servername: hostname
+    }
   });
 }
 
+/** HTTPS email — works on Render when SMTP ports/IPv6 are broken. Free: https://resend.com */
+async function sendViaResend({ from, to, subject, text }) {
+  const apiKey = (process.env.RESEND_API_KEY || "").trim();
+  if (!apiKey) return null;
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from: from.includes("@") ? from : `GloMax <onboarding@resend.dev>`,
+      to: [to],
+      subject,
+      text
+    })
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(
+      data.message || data.error || `Resend failed (${res.status})`
+    );
+    err.code = "RESEND_ERROR";
+    throw err;
+  }
+
+  console.log(`[mail] Sent via Resend → ${to}`);
+  return data;
+}
+
 async function sendOrderEmail(orderPayload) {
-  const transporter = createTransporter();
   const orderedAt = orderPayload.orderedAt
     ? new Date(orderPayload.orderedAt)
     : new Date();
@@ -179,18 +223,19 @@ async function sendOrderEmail(orderPayload) {
     process.env.SMTP_FROM || `GloMax Orders <${getOrderEmailFrom()}>`;
   const from = String(fromRaw).trim().replace(/^["']|["']$/g, "");
 
+  // Prefer Resend HTTPS if configured (avoids SMTP/IPv6 on Render)
+  if (process.env.RESEND_API_KEY) {
+    await sendViaResend({ from, to, subject, text });
+    return { to, from, subject, totals, orderedAt, via: "resend" };
+  }
+
   try {
-    await transporter.sendMail({
-      from,
-      to,
-      subject,
-      text
-    });
+    const transporter = await createTransporter();
+    await transporter.sendMail({ from, to, subject, text });
   } catch (err) {
     console.error("[mail] sendMail error:", {
       code: err.code,
       responseCode: err.responseCode,
-      command: err.command,
       message: err.message,
       response: err.response
     });
@@ -198,29 +243,41 @@ async function sendOrderEmail(orderPayload) {
   }
 
   console.log(`[mail] Sent order email → ${to}`);
-  return { to, from, subject, totals, orderedAt };
+  return { to, from, subject, totals, orderedAt, via: "smtp" };
 }
 
 async function assertSmtpReady() {
-  const user = (process.env.SMTP_USER || "").trim();
-  const pass = String(process.env.SMTP_PASS || "")
-    .trim()
-    .replace(/^["']|["']$/g, "")
-    .replace(/\s+/g, "");
   const to = getOrderEmailTo();
+
+  if (process.env.RESEND_API_KEY) {
+    console.log(`[mail] Using Resend HTTPS → ${to}`);
+    return true;
+  }
+
+  const user = (process.env.SMTP_USER || "").trim();
+  const pass = getSmtpPass();
   if (!user || !pass) {
     console.warn(
-      "[mail] SMTP not configured. Set SMTP_USER and SMTP_PASS in Environment Variables."
+      "[mail] SMTP not configured. Set SMTP_USER/SMTP_PASS, or RESEND_API_KEY (recommended on Render)."
     );
     return false;
   }
+
   console.log(`[mail] Order emails: ${user} → ${to}`);
   try {
-    await createTransporter().verify();
+    const ipv4 = await resolveIpv4(
+      (process.env.SMTP_HOST || "smtp.gmail.com").trim()
+    );
+    console.log(`[mail] Resolved smtp IPv4: ${ipv4}`);
+    const transporter = await createTransporter();
+    await transporter.verify();
     console.log("[mail] SMTP connection verified OK");
     return true;
   } catch (err) {
     console.error("[mail] SMTP verify FAILED:", err.message || err);
+    console.error(
+      "[mail] Tip: Render often blocks SMTP/IPv6. Add free RESEND_API_KEY from https://resend.com"
+    );
     return false;
   }
 }
