@@ -86,31 +86,31 @@ function buildOrderEmail({ customer, products, orderedAt, orderId }) {
 
 function createTransporter() {
   const user = getOrderEmailFrom();
-  const pass = String(process.env.SMTP_PASS || "").replace(/\s+/g, "");
+  const pass = String(process.env.SMTP_PASS || "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\s+/g, "");
   const host = (process.env.SMTP_HOST || "smtp.gmail.com").trim();
-  const port = Number(process.env.SMTP_PORT || 587);
+  const port = Number(process.env.SMTP_PORT || 465);
 
   if (!user || !pass) {
     const err = new Error(
-      "SMTP тохиргоо дутуу байна. .env файлд SMTP_USER болон SMTP_PASS (Gmail App Password) оруулна уу."
+      "SMTP тохиргоо дутуу. Render Environment дээр SMTP_USER болон SMTP_PASS оруулна уу."
     );
     err.code = "SMTP_CONFIG";
     throw err;
   }
 
-  // Prefer Gmail well-known service; fall back to explicit host/port
-  if (!process.env.SMTP_HOST || host === "smtp.gmail.com") {
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: { user, pass }
-    });
-  }
-
+  // Prefer 465/SSL — more reliable from cloud hosts than 587/STARTTLS
   return nodemailer.createTransport({
     host,
     port,
     secure: port === 465,
-    auth: { user, pass }
+    auth: { user, pass },
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 20000,
+    tls: { rejectUnauthorized: true }
   });
 }
 
@@ -165,25 +165,37 @@ async function sendOrderEmail(orderPayload) {
 
   const to = getOrderEmailTo();
   const fromRaw =
-    process.env.SMTP_FROM ||
-    `"GloMax Orders" <${getOrderEmailFrom()}>`;
-  // Render env UI sometimes stores quotes literally — strip outer quotes
+    process.env.SMTP_FROM || `GloMax Orders <${getOrderEmailFrom()}>`;
   const from = String(fromRaw).trim().replace(/^["']|["']$/g, "");
 
-  await transporter.sendMail({
-    from,
-    to,
-    subject,
-    text
-  });
+  try {
+    await transporter.sendMail({
+      from,
+      to,
+      subject,
+      text
+    });
+  } catch (err) {
+    console.error("[mail] sendMail error:", {
+      code: err.code,
+      responseCode: err.responseCode,
+      command: err.command,
+      message: err.message,
+      response: err.response
+    });
+    throw err;
+  }
 
   console.log(`[mail] Sent order email → ${to}`);
   return { to, from, subject, totals, orderedAt };
 }
 
-function assertSmtpReady() {
+async function assertSmtpReady() {
   const user = (process.env.SMTP_USER || "").trim();
-  const pass = String(process.env.SMTP_PASS || "").replace(/\s+/g, "");
+  const pass = String(process.env.SMTP_PASS || "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\s+/g, "");
   const to = getOrderEmailTo();
   if (!user || !pass) {
     console.warn(
@@ -192,7 +204,14 @@ function assertSmtpReady() {
     return false;
   }
   console.log(`[mail] Order emails: ${user} → ${to}`);
-  return true;
+  try {
+    await createTransporter().verify();
+    console.log("[mail] SMTP connection verified OK");
+    return true;
+  } catch (err) {
+    console.error("[mail] SMTP verify FAILED:", err.message || err);
+    return false;
+  }
 }
 
 module.exports = {

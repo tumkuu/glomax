@@ -162,22 +162,29 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function sendOrderEmailNotification(order, orderId) {
-    const res = await fetch("/api/order-email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        orderId,
-        customerName: order.customerName,
-        phone: order.phone,
-        address: order.address,
-        notes: order.notes,
-        products: order.products,
-        totalItems: order.totalItems,
-        totalAmount: order.totalAmount,
-        shipping: order.shipping,
-        orderedAt: order.createdAtIso
-      })
-    });
+    let res;
+    try {
+      res = await fetch("/api/order-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          customerName: order.customerName,
+          phone: order.phone,
+          address: order.address,
+          notes: order.notes,
+          products: order.products,
+          totalItems: order.totalItems,
+          totalAmount: order.totalAmount,
+          shipping: order.shipping,
+          orderedAt: order.createdAtIso
+        })
+      });
+    } catch (netErr) {
+      throw new Error(
+        "Сервертэй холбогдож чадсангүй. Сайт нойрсож байж магадгүй — 30 сек хүлээгээд дахин оролдоно уу."
+      );
+    }
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {

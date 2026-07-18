@@ -228,16 +228,26 @@ app.post("/api/order-email", async (req, res) => {
     let message = "Захиалгын имэйл илгээж чадсангүй. Дахин оролдоно уу.";
     if (err.code === "SMTP_CONFIG") {
       message =
-        "Имэйл илгээх тохиргоо дутуу байна. .env дээр Gmail App Password оруулна уу.";
+        "Имэйл тохиргоо дутуу. Render дээр SMTP_USER / SMTP_PASS шалгана уу.";
     } else if (
-      /Invalid login|Username and Password not accepted|EAUTH/i.test(
-        String(err.message || "")
+      /Invalid login|Username and Password not accepted|EAUTH|535/i.test(
+        String(err.message || "") + String(err.response || "")
       )
     ) {
       message =
-        "Gmail нэвтрэлт амжилтгүй. SMTP_USER / App Password-оо шалгана уу.";
+        "Gmail нэвтрэлт амжилтгүй. SMTP_PASS (App Password) буруу байна.";
+    } else if (
+      /timeout|ETIMEDOUT|ECONNREFUSED|ENOTFOUND|ESOCKET/i.test(
+        String(err.code || "") + String(err.message || "")
+      )
+    ) {
+      message =
+        "Имэйл сервертэй холбогдож чадсангүй. Хэсэг хүлээгээд дахин оролдоно уу.";
     }
-    res.status(502).json({ error: message });
+    res.status(502).json({
+      error: message,
+      detail: err.code || err.responseCode || null
+    });
   }
 });
 
