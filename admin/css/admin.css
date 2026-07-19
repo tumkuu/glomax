@@ -149,6 +149,28 @@ img {
   background: #fff;
 }
 
+.url-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.url-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.url-row .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.field-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;

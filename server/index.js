@@ -142,6 +142,26 @@ function handleError(res, err) {
   res.status(500).json({ error: err.message || "Алдаа гарлаа." });
 }
 
+function normalizeImageList(raw) {
+  if (Array.isArray(raw)) {
+    return raw.map((s) => String(s || "").trim()).filter(Boolean);
+  }
+  return parseImages(typeof raw === "string" ? raw : "[]")
+    .map((s) => String(s || "").trim())
+    .filter(Boolean);
+}
+
+async function resolveProductImages(body = {}, files = []) {
+  let images = [];
+  if (body.images !== undefined) {
+    images = normalizeImageList(body.images);
+  } else if (body.keepImages !== undefined) {
+    images = normalizeImageList(body.keepImages);
+  }
+  const uploaded = await saveUploadedFiles(files);
+  return [...images, ...uploaded];
+}
+
 /* ——— Public API ——— */
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, ts: Date.now() });
@@ -314,9 +334,9 @@ app.post(
         return res.status(400).json({ error: "Нэр болон үнэ заавал шаардлагатай." });
       }
 
-      const images = await saveUploadedFiles(req.files);
+      const images = await resolveProductImages(req.body, req.files);
       if (!images.length) {
-        return res.status(400).json({ error: "Дор хаяж нэг зураг оруулна уу." });
+        return res.status(400).json({ error: "Дор хаяж нэг зургийн холбоос оруулна уу." });
       }
 
       const product = await createProduct({
@@ -346,24 +366,17 @@ app.put(
         return res.status(404).json({ error: "Бараа олдсонгүй." });
       }
 
-      const { name, price, description, category, stock, keepImages, removeImages } =
-        req.body;
+      const { name, price, description, category, stock, removeImages } = req.body;
 
-      let images = [...existing.images];
-
-      if (keepImages !== undefined) {
-        const keep = parseImages(
-          typeof keepImages === "string" ? keepImages : JSON.stringify(keepImages)
-        );
-        images = keep;
+      let images;
+      if (req.body.images !== undefined || req.body.keepImages !== undefined || (req.files && req.files.length)) {
+        images = await resolveProductImages(req.body, req.files);
+      } else {
+        images = [...existing.images];
       }
 
       if (removeImages) {
-        const removeList = parseImages(
-          typeof removeImages === "string"
-            ? removeImages
-            : JSON.stringify(removeImages)
-        );
+        const removeList = normalizeImageList(removeImages);
         images = images.filter((img) => !removeList.includes(img));
         removeList.forEach((img) => {
           if (img.startsWith("/uploads/")) {
@@ -378,9 +391,6 @@ app.put(
           }
         });
       }
-
-      const uploaded = await saveUploadedFiles(req.files);
-      images = [...images, ...uploaded];
 
       if (!images.length) {
         return res.status(400).json({ error: "Бараанд дор хаяж нэг зураг хэрэгтэй." });

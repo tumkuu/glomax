@@ -414,11 +414,6 @@ select {
   display: none;
 }
 
-/* Admin link only in mobile hamburger — desktop nav unchanged */
-.nav-admin {
-  display: none;
-}
-
 /* ——— Hero ——— */
 .hero {
   position: relative;
@@ -1781,15 +1776,6 @@ select {
     display: flex;
     align-items: center;
     flex-shrink: 0;
-  }
-
-  .nav-admin {
-    display: flex;
-    margin-top: 0.5rem;
-    border-top: 1px solid var(--border);
-    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-    color: var(--primary) !important;
-    font-weight: 600;
   }
 
   .section {

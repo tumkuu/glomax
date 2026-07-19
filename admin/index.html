@@ -147,11 +147,17 @@
                   <textarea id="add-description" name="description" rows="4"></textarea>
                 </div>
                 <div class="form-group full">
-                  <label>Зураг * (үндсэн + галерей)</label>
-                  <label class="dropzone" id="add-dropzone">
-                    Зураг сонгох эсвэл чирж оруулах
-                    <input type="file" id="add-images" name="images" accept="image/*" multiple />
-                  </label>
+                  <label for="add-image-url">Зураг * (линкээр — үндсэн + галерей)</label>
+                  <div class="url-row">
+                    <input
+                      id="add-image-url"
+                      type="url"
+                      placeholder="https://example.com/image.jpg"
+                      inputmode="url"
+                    />
+                    <button type="button" class="btn btn--outline" id="add-image-btn">Нэмэх</button>
+                  </div>
+                  <p class="field-hint">Зургийн шууд холбоос (URL) оруулна. Олон зураг нэмж болно.</p>
                   <div class="image-preview" id="add-preview"></div>
                 </div>
               </div>
@@ -257,11 +263,16 @@
               <div class="image-preview" id="edit-current-images"></div>
             </div>
             <div class="form-group full">
-              <label>Шинэ зураг нэмэх</label>
-              <label class="dropzone" id="edit-dropzone">
-                Нэмэлт зураг сонгох
-                <input type="file" id="edit-images" accept="image/*" multiple />
-              </label>
+              <label for="edit-image-url">Шинэ зураг нэмэх (линк)</label>
+              <div class="url-row">
+                <input
+                  id="edit-image-url"
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  inputmode="url"
+                />
+                <button type="button" class="btn btn--outline" id="edit-image-btn">Нэмэх</button>
+              </div>
               <div class="image-preview" id="edit-preview"></div>
             </div>
           </div>
@@ -301,13 +312,15 @@
               <input id="promo-button-link" placeholder="products.html" />
             </div>
             <div class="form-group full">
-              <label>Promotion Image</label>
-              <div class="image-preview" id="promo-current-image"></div>
-              <label class="dropzone" id="promo-dropzone" style="margin-top: 0.75rem">
-                Зураг сонгох эсвэл солих
-                <input type="file" id="promo-image" accept="image/*" />
-              </label>
-              <div class="image-preview" id="promo-preview"></div>
+              <label for="promo-image-url">Зураг (линк) *</label>
+              <input
+                id="promo-image-url"
+                type="url"
+                placeholder="https://example.com/promo.jpg"
+                inputmode="url"
+                required
+              />
+              <div class="image-preview" id="promo-preview" style="margin-top: 0.75rem"></div>
             </div>
             <div class="form-group">
               <label class="checkbox-row">

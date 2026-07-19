@@ -9,13 +9,25 @@ let products = [];
 let promoCards = [];
 let promoSection = null;
 let editKeepImages = [];
-let addFiles = [];
-let editFiles = [];
-let promoImageFile = null;
-let promoCurrentImage = "";
+let addImageUrls = [];
+let editImageUrls = [];
 
 function formatPrice(n) {
   return new Intl.NumberFormat("mn-MN").format(n) + "₮";
+}
+
+function normalizeImageUrl(raw) {
+  return String(raw || "").trim();
+}
+
+function isValidImageUrl(url) {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function showFlash(msg, isError = false) {
@@ -206,69 +218,60 @@ async function refreshAll() {
   renderPromotionsTable();
 }
 
-function setupDropzone(dropzoneId, inputId, onFiles) {
-  const zone = document.getElementById(dropzoneId);
-  const input = document.getElementById(inputId);
-
-  zone.addEventListener("click", (e) => {
-    if (e.target !== input) input.click();
-  });
-
-  ["dragenter", "dragover"].forEach((ev) => {
-    zone.addEventListener(ev, (e) => {
-      e.preventDefault();
-      zone.classList.add("is-drag");
-    });
-  });
-
-  ["dragleave", "drop"].forEach((ev) => {
-    zone.addEventListener(ev, (e) => {
-      e.preventDefault();
-      zone.classList.remove("is-drag");
-    });
-  });
-
-  zone.addEventListener("drop", (e) => {
-    const files = [...e.dataTransfer.files].filter((f) => f.type.startsWith("image/"));
-    onFiles(files);
-  });
-
-  input.addEventListener("change", () => {
-    onFiles([...input.files]);
-    input.value = "";
-  });
-}
-
-function renderFilePreview(containerId, files, setter) {
+function renderUrlPreview(containerId, urls, setter) {
   const el = document.getElementById(containerId);
-  el.innerHTML = files
-    .map((file, i) => {
-      const url = URL.createObjectURL(file);
-      return `
-        <div class="image-preview__item">
-          <img src="${url}" alt="" />
-          <button type="button" data-remove-file="${i}" aria-label="Устгах">×</button>
-        </div>`;
-    })
+  if (!el) return;
+  if (!urls.length) {
+    el.innerHTML = "";
+    return;
+  }
+  el.innerHTML = urls
+    .map(
+      (src, i) => `
+      <div class="image-preview__item">
+        <img src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" />
+        <button type="button" data-remove-url="${i}" aria-label="Устгах">×</button>
+      </div>`
+    )
     .join("");
 
-  el.querySelectorAll("[data-remove-file]").forEach((btn) => {
+  el.querySelectorAll("[data-remove-url]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const next = [...files];
-      next.splice(Number(btn.dataset.removeFile), 1);
+      const next = [...urls];
+      next.splice(Number(btn.dataset.removeUrl), 1);
       setter(next);
     });
   });
 }
 
-function setAddFiles(files) {
-  addFiles = files;
-  renderFilePreview("add-preview", addFiles, setAddFiles);
+function setAddImageUrls(urls) {
+  addImageUrls = urls;
+  renderUrlPreview("add-preview", addImageUrls, setAddImageUrls);
 }
 
-function setEditFiles(files) {
-  editFiles = files;
-  renderFilePreview("edit-preview", editFiles, setEditFiles);
+function setEditImageUrls(urls) {
+  editImageUrls = urls;
+  renderUrlPreview("edit-preview", editImageUrls, setEditImageUrls);
+}
+
+function addUrlFromInput(inputId, currentUrls, setter) {
+  const input = document.getElementById(inputId);
+  const url = normalizeImageUrl(input.value);
+  if (!url) {
+    showFlash("Зургийн холбоос оруулна уу.", true);
+    return;
+  }
+  if (!isValidImageUrl(url)) {
+    showFlash("Зөв http(s) холбоос оруулна уу.", true);
+    return;
+  }
+  if (currentUrls.includes(url)) {
+    showFlash("Энэ зураг аль хэдийн нэмэгдсэн.", true);
+    return;
+  }
+  setter([...currentUrls, url]);
+  input.value = "";
+  input.focus();
 }
 
 function renderKeepImages() {
@@ -277,7 +280,7 @@ function renderKeepImages() {
     .map(
       (src, i) => `
       <div class="image-preview__item">
-        <img src="${src}" alt="" />
+        <img src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" />
         <button type="button" data-remove-keep="${i}" aria-label="Устгах">×</button>
       </div>`
     )
@@ -302,15 +305,16 @@ function openEdit(id) {
   document.getElementById("edit-stock").value = p.stock;
   document.getElementById("edit-description").value = p.description || "";
   editKeepImages = [...(p.images || [])];
-  editFiles = [];
+  setEditImageUrls([]);
+  document.getElementById("edit-image-url").value = "";
   renderKeepImages();
-  setEditFiles([]);
   document.getElementById("edit-modal").classList.add("is-open");
 }
 
 function closeEdit() {
   document.getElementById("edit-modal").classList.remove("is-open");
-  setEditFiles([]);
+  setEditImageUrls([]);
+  document.getElementById("edit-image-url").value = "";
 }
 
 document.querySelectorAll("[data-panel]").forEach((btn) => {
@@ -358,34 +362,64 @@ document.getElementById("products-table").addEventListener("click", async (e) =>
   }
 });
 
-setupDropzone("add-dropzone", "add-images", (files) => {
-  setAddFiles([...addFiles, ...files]);
+document.getElementById("add-image-btn").addEventListener("click", () => {
+  addUrlFromInput("add-image-url", addImageUrls, setAddImageUrls);
 });
 
-setupDropzone("edit-dropzone", "edit-images", (files) => {
-  setEditFiles([...editFiles, ...files]);
+document.getElementById("add-image-url").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addUrlFromInput("add-image-url", addImageUrls, setAddImageUrls);
+  }
+});
+
+document.getElementById("edit-image-btn").addEventListener("click", () => {
+  addUrlFromInput("edit-image-url", editImageUrls, setEditImageUrls);
+});
+
+document.getElementById("edit-image-url").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addUrlFromInput("edit-image-url", editImageUrls, setEditImageUrls);
+  }
 });
 
 document.getElementById("add-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!addFiles.length) {
-    showFlash("Дор хаяж нэг зураг оруулна уу.", true);
+
+  const pending = normalizeImageUrl(document.getElementById("add-image-url").value);
+  let images = [...addImageUrls];
+  if (pending) {
+    if (!isValidImageUrl(pending)) {
+      showFlash("Зөв http(s) холбоос оруулна уу.", true);
+      return;
+    }
+    if (!images.includes(pending)) images.push(pending);
+  }
+
+  if (!images.length) {
+    showFlash("Дор хаяж нэг зургийн холбоос нэмнэ үү.", true);
     return;
   }
 
-  const fd = new FormData();
-  fd.append("name", e.target.name.value.trim());
-  fd.append("price", e.target.price.value);
-  fd.append("category", e.target.category.value.trim());
-  fd.append("stock", e.target.stock.value || "0");
-  fd.append("description", e.target.description.value.trim());
-  addFiles.forEach((f) => fd.append("images", f));
+  const payload = {
+    name: e.target.name.value.trim(),
+    price: e.target.price.value,
+    category: e.target.category.value.trim(),
+    stock: e.target.stock.value || "0",
+    description: e.target.description.value.trim(),
+    images
+  };
 
   try {
-    await api("/api/admin/products", { method: "POST", body: fd });
+    await api("/api/admin/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
     showFlash("Бараа амжилттай нэмэгдлээ.");
     e.target.reset();
-    setAddFiles([]);
+    setAddImageUrls([]);
     await refreshAll();
     switchPanel("products");
   } catch (err) {
@@ -397,22 +431,40 @@ document.getElementById("edit-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const id = document.getElementById("edit-id").value;
 
-  if (!editKeepImages.length && !editFiles.length) {
+  const pending = normalizeImageUrl(document.getElementById("edit-image-url").value);
+  let extra = [...editImageUrls];
+  if (pending) {
+    if (!isValidImageUrl(pending)) {
+      showFlash("Зөв http(s) холбоос оруулна уу.", true);
+      return;
+    }
+    if (!extra.includes(pending) && !editKeepImages.includes(pending)) {
+      extra.push(pending);
+    }
+  }
+
+  const images = [...editKeepImages, ...extra];
+
+  if (!images.length) {
     showFlash("Дор хаяж нэг зураг үлдээх эсвэл нэмнэ үү.", true);
     return;
   }
 
-  const fd = new FormData();
-  fd.append("name", document.getElementById("edit-name").value.trim());
-  fd.append("price", document.getElementById("edit-price").value);
-  fd.append("category", document.getElementById("edit-category").value.trim());
-  fd.append("stock", document.getElementById("edit-stock").value || "0");
-  fd.append("description", document.getElementById("edit-description").value.trim());
-  fd.append("keepImages", JSON.stringify(editKeepImages));
-  editFiles.forEach((f) => fd.append("images", f));
+  const payload = {
+    name: document.getElementById("edit-name").value.trim(),
+    price: document.getElementById("edit-price").value,
+    category: document.getElementById("edit-category").value.trim(),
+    stock: document.getElementById("edit-stock").value || "0",
+    description: document.getElementById("edit-description").value.trim(),
+    images
+  };
 
   try {
-    await api(`/api/admin/products/${id}`, { method: "PUT", body: fd });
+    await api(`/api/admin/products/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
     showFlash("Өөрчлөлт хадгалагдлаа.");
     closeEdit();
     await refreshAll();
@@ -470,33 +522,16 @@ function renderPromotionsTable() {
     .join("");
 }
 
-function setPromoImageFile(files) {
-  promoImageFile = files[0] || null;
+function renderPromoImagePreview(url) {
   const el = document.getElementById("promo-preview");
-  if (!promoImageFile) {
+  const src = normalizeImageUrl(url);
+  if (!src) {
     el.innerHTML = "";
     return;
   }
-  const url = URL.createObjectURL(promoImageFile);
   el.innerHTML = `
     <div class="image-preview__item">
-      <img src="${url}" alt="" />
-      <button type="button" data-clear-promo-file aria-label="Устгах">×</button>
-    </div>`;
-  el.querySelector("[data-clear-promo-file]")?.addEventListener("click", () => {
-    setPromoImageFile([]);
-  });
-}
-
-function renderPromoCurrentImage() {
-  const el = document.getElementById("promo-current-image");
-  if (!promoCurrentImage) {
-    el.innerHTML = `<p style="opacity:.7;margin:0;font-size:.9rem">Зураг байхгүй</p>`;
-    return;
-  }
-  el.innerHTML = `
-    <div class="image-preview__item">
-      <img src="${escapeHtml(promoCurrentImage)}" alt="" />
+      <img src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" />
     </div>`;
 }
 
@@ -515,30 +550,32 @@ function openPromoModal(id = null) {
   document.getElementById("promo-button-link").value = p?.buttonLink || "";
   document.getElementById("promo-active").checked = p ? p.active !== false : true;
   document.getElementById("promo-wide").checked = Boolean(p?.wide);
-  promoCurrentImage = p?.image || "";
-  promoImageFile = null;
-  renderPromoCurrentImage();
-  setPromoImageFile([]);
+  document.getElementById("promo-image-url").value = p?.image || "";
+  renderPromoImagePreview(p?.image || "");
   document.getElementById("promo-modal").classList.add("is-open");
 }
 
 function closePromoModal() {
   document.getElementById("promo-modal").classList.remove("is-open");
-  promoImageFile = null;
-  promoCurrentImage = "";
-  setPromoImageFile([]);
+  document.getElementById("promo-image-url").value = "";
+  renderPromoImagePreview("");
 }
 
 document.getElementById("promo-section-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const fd = new FormData();
-  fd.append("title", document.getElementById("section-title").value.trim());
-  fd.append("subtitle", document.getElementById("section-subtitle").value.trim());
-  fd.append("description", document.getElementById("section-description").value.trim());
-  fd.append("active", document.getElementById("section-active").checked ? "true" : "false");
+  const payload = {
+    title: document.getElementById("section-title").value.trim(),
+    subtitle: document.getElementById("section-subtitle").value.trim(),
+    description: document.getElementById("section-description").value.trim(),
+    active: document.getElementById("section-active").checked
+  };
 
   try {
-    await api("/api/admin/promotions/section", { method: "PUT", body: fd });
+    await api("/api/admin/promotions/section", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
     showFlash("Хэсгийн мэдээлэл хадгалагдлаа.");
     await refreshAll();
   } catch (err) {
@@ -571,41 +608,50 @@ document.getElementById("promotions-table").addEventListener("click", async (e) 
   }
 });
 
-setupDropzone("promo-dropzone", "promo-image", (files) => {
-  setPromoImageFile(files.slice(0, 1));
+document.getElementById("promo-image-url").addEventListener("input", (e) => {
+  renderPromoImagePreview(e.target.value);
 });
 
 document.getElementById("promo-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const id = document.getElementById("promo-id").value;
   const isNew = !id;
+  const image = normalizeImageUrl(document.getElementById("promo-image-url").value);
 
-  if (isNew && !promoImageFile && !promoCurrentImage) {
-    showFlash("Урамшууллын зураг оруулна уу.", true);
+  if (!image) {
+    showFlash("Урамшууллын зургийн холбоос оруулна уу.", true);
     return;
   }
-  if (!isNew && !promoImageFile && !promoCurrentImage) {
-    showFlash("Урамшууллын зураг шаардлагатай.", true);
+  if (!isValidImageUrl(image)) {
+    showFlash("Зөв http(s) холбоос оруулна уу.", true);
     return;
   }
 
-  const fd = new FormData();
-  fd.append("title", document.getElementById("promo-title").value.trim());
-  fd.append("subtitle", document.getElementById("promo-subtitle").value.trim());
-  fd.append("description", document.getElementById("promo-description").value.trim());
-  fd.append("buttonText", document.getElementById("promo-button-text").value.trim());
-  fd.append("buttonLink", document.getElementById("promo-button-link").value.trim());
-  fd.append("active", document.getElementById("promo-active").checked ? "true" : "false");
-  fd.append("wide", document.getElementById("promo-wide").checked ? "true" : "false");
-  if (promoImageFile) fd.append("image", promoImageFile);
-  else if (promoCurrentImage) fd.append("image", promoCurrentImage);
+  const payload = {
+    title: document.getElementById("promo-title").value.trim(),
+    subtitle: document.getElementById("promo-subtitle").value.trim(),
+    description: document.getElementById("promo-description").value.trim(),
+    buttonText: document.getElementById("promo-button-text").value.trim(),
+    buttonLink: document.getElementById("promo-button-link").value.trim(),
+    active: document.getElementById("promo-active").checked,
+    wide: document.getElementById("promo-wide").checked,
+    image
+  };
 
   try {
     if (isNew) {
-      await api("/api/admin/promotions", { method: "POST", body: fd });
+      await api("/api/admin/promotions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
       showFlash("Урамшуулал нэмэгдлээ.");
     } else {
-      await api(`/api/admin/promotions/${id}`, { method: "PUT", body: fd });
+      await api(`/api/admin/promotions/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
       showFlash("Урамшуулал хадгалагдлаа.");
     }
     closePromoModal();
